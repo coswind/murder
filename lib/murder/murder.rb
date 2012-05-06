@@ -15,6 +15,8 @@
 # limitations under the License.
 
 namespace :murder do
+  HOST = "LC_ALL=C ifconfig | grep 'inet addr' | grep '10.*' | awk '{print $2}' | awk -F : '{print $2}' | head -1"
+  
   desc <<-DESC
   Compresses the directory specified by the passed-in argument 'files_path' and creates a .torrent file identified by the 'tag' argument. Be sure to use the same 'tag' value with any following commands. Any .git directories will be skipped. Once completed, the .torrent will be downloaded to your local /tmp/TAG.tgz.torrent.
   DESC
@@ -53,8 +55,9 @@ namespace :murder do
   DESC
   task :start_seeding, :roles => :seeder do
     require_tag
-    run "SCREENRC=/dev/null SYSSCREENRC=/dev/null screen -dms 'seeder-#{tag}' python #{remote_murder_path}/murder_client.py seeder '#{filename}.torrent' '#{filename}' `LC_ALL=C host $HOSTNAME | awk '/has address/ {print $4}' | head -n 1`"
-  end
+    #run "SCREENRC=/dev/null SYSSCREENRC=/dev/null screen -dms 'seeder-#{tag}' python #{remote_murder_path}/murder_client.py seeder '#{filename}.torrent' '#{filename}' `LC_ALL=C host $HOSTNAME | awk '/has address/ {print $4}' | head -n 1`"
+    run "SCREENRC=/dev/null SYSSCREENRC=/dev/null screen -dms 'seeder-#{tag}' python #{remote_murder_path}/murder_client.py seeder '#{filename}.torrent' '#{filename}' `#{HOST}`" 
+end
 
   desc <<-DESC
   If the seeder is currently seeding, this will kill the process. Note that if it is not running, you will receive an error. If a peer was downloading from this seed, the peer will find another host to receive any remaining data. You must specify a valid 'tag' argument.
