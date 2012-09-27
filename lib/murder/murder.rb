@@ -15,8 +15,9 @@
 # limitations under the License.
 
 namespace :murder do
-  HOST = "LC_ALL=C ifconfig | grep 'inet addr' | grep '10.*' | awk '{print $2}' | awk -F : '{print $2}' | head -1"
-  
+  # HOST = "LC_ALL=C ifconfig | grep 'inet addr' | grep '10.*' | awk '{print $2}' | awk -F : '{print $2}' | head -1"
+  HOST = "ifconfig eth0|grep inet|head -1|sed 's/\:/ /'|awk '{print $3}' | head -n 1"
+
   desc <<-DESC
   Compresses the directory specified by the passed-in argument 'files_path' and creates a .torrent file identified by the 'tag' argument. Be sure to use the same 'tag' value with any following commands. Any .git directories will be skipped. Once completed, the .torrent will be downloaded to your local /tmp/TAG.tgz.torrent.
   DESC
@@ -56,7 +57,7 @@ namespace :murder do
   task :start_seeding, :roles => :seeder do
     require_tag
     #run "SCREENRC=/dev/null SYSSCREENRC=/dev/null screen -dms 'seeder-#{tag}' python #{remote_murder_path}/murder_client.py seeder '#{filename}.torrent' '#{filename}' `LC_ALL=C host $HOSTNAME | awk '/has address/ {print $4}' | head -n 1`"
-    run "SCREENRC=/dev/null SYSSCREENRC=/dev/null screen -dms 'seeder-#{tag}' python #{remote_murder_path}/murder_client.py seeder '#{filename}.torrent' '#{filename}' `#{HOST}`" 
+    run "SCREENRC=/dev/null SYSSCREENRC=/dev/null screen -dms 'seeder-#{tag}' python #{remote_murder_path}/murder_client.py seeder '#{filename}.torrent' '#{filename}' `#{HOST}`"
 end
 
   desc <<-DESC
@@ -90,11 +91,11 @@ end
       run "rm -rf '#{destination_path}/'*"
     end
     if !ENV['no_tag_directory'] && !ENV['path_is_file']
-      run "find '#{destination_path}/'* >/dev/null 2>&1 && echo \"destination_path #{destination_path} on $HOSTNAME is not empty\" && exit 1 || exit 0"
+      # run "find '#{destination_path}/'* >/dev/null 2>&1 && echo \"destination_path #{destination_path} on $HOSTNAME is not empty\" && exit 1 || exit 0"
     end
 
     upload("#{filename}.torrent", "#{filename}.torrent", :via => :scp)
-    run "python #{remote_murder_path}/murder_client.py peer '#{filename}.torrent' '#{filename}' `LC_ALL=C host $CAPISTRANO:HOST$ | awk '/has address/ {print $4}' | head -n 1`"
+    run "python #{remote_murder_path}/murder_client.py peer '#{filename}.torrent' '#{filename}' `#{HOST}`"
 
     if ENV['path_is_file']
       run "cp #{filename} #{destination_path}"
